@@ -16,8 +16,30 @@ Thanks to prozac we have a working znc module that pushes priv messages and hili
 
 	-ignorenetworkservices 0|1 - when set to 1, znc won't push messages from network services
 
+	-tcpdevice hostname:port:(plain|ssl):auth-token[:device-token]
+		additionally to any normally registered device.
+		Will add a statically configured device that will be pushed to
+		This is an advanced option and most likely never used by most
+		users.
+		It is intended to be used with external push services, e.g. for
+		other clients than colloquy that support a push-service with a
+		compatbile network interface.
+		e.g.: localhost:12345:plain:ABCDEF
+			this will push to the localhost at port 12345 using a unencrypted
+			connection, adding a special attribute '"auth-token":"ABCDEF"' to the
+			push message. The device will be constructed as
+			"tcpdevice:localhost:12345:ABCDEF"
+		e.g. localhost:12345:ssl:ABCDEF:af12345bcde123
+			this will also push to the localhost at port 12345, using SSL
+			encryption, sending auth-token ABCDEF and device:"af12345bcde123".
+		e.g. localhost:12345:ssl::af12345bcde123
+			this will also push to the localhost at port 12345, using SSL
+			encryption, skipping the auth-token but sending device
+			"af12345bcde123".
+
 * all the arguments above can be set from with-in your IRC client by messaging *colloquy now
   try /msg *colloquy help
+  (except "tcpdevice", which currently can only be configured via the module arguments)
 
 To install make sure you have znc installed and configured, then run the following:
 

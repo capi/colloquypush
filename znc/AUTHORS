@@ -12,3 +12,8 @@ Loria <Loria@Phantasia.org>
 
 adamcandy (github)
 	-- ignore network services
+
+Martin Carpella (capi) <martin.carpella@gmx.net> <martinc@gmx.at>
+	-- skipmessagecontent
+	-- awayonlypush
+	-- tcpdevice

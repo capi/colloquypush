@@ -19,7 +19,9 @@ public:
 	CDevice(const CString& sToken, CModule& Parent)
 			: m_Parent(Parent), m_sToken(sToken) {
 				m_uPort = 0;
+				m_bSsl = true;
 				m_bNew = false;
+				m_bPersistent = true;
 				m_uFlags = 0;
 	}
 
@@ -44,6 +46,11 @@ public:
 	}
 
 	bool Save() {
+		if (!IsPersistent()) {
+			DEBUG("SKIPPED [" + m_sToken +"]");
+			// not-saving a non-persistent device is still a success :)
+			return true;
+		}
 		CString sStr(Serialize());
 
 		if (!m_Parent.SetNV("device::" + GetToken(), sStr)) {
@@ -70,6 +77,10 @@ public:
 		sPayload = "{";
 
 		sPayload += "\"device-token\":\"" + CollEscape(m_sToken) + "\"";
+
+		if (!m_sAuthToken.empty()) {
+			sPayload += ",\"auth-token\":\"" + CollEscape(m_sAuthToken) +"\"";
+		}
 
 		if (!sMessage.empty()) {
 			sPayload += ",\"message\":\"" + CollEscape(sMessage) + "\"";
@@ -116,7 +127,7 @@ public:
 		DEBUG("----------------------------------------------------------------------------");
 
 		CSocket *pSock = new CSocket(&m_Parent);
-		pSock->Connect(m_sHost, m_uPort, true);
+		pSock->Connect(m_sHost, m_uPort, m_bSsl);
 		pSock->Write(sPayload);
 		pSock->Close(Csock::CLT_AFTERWRITE);
 		m_Parent.AddSocket(pSock);
@@ -209,6 +220,7 @@ public:
 
 	// Getters
 	CString GetToken() const { return m_sToken; }
+	CString GetAuthToken() const { return m_sAuthToken; }
 	CString GetName() const { return m_sName; }
 	CString GetConnectionToken() const { return m_sConnectionToken; }
 	CString GetConnectionName() const { return m_sConnectionName; }
@@ -219,10 +231,13 @@ public:
 	bool HasClient(CClient* p) const { return m_spClients.find(p) != m_spClients.end(); }
 	CString GetHost() const { return m_sHost; }
 	unsigned short GetPort() const { return m_uPort; }
+	bool IsSsl() const { return m_bSsl; }
 	bool IsNew() const { return m_bNew; }
+	bool IsPersistent() const { return m_bPersistent; }
 
 	// Setters
 	void SetToken(const CString& s) { m_sToken = s; }
+	void SetAuthToken(const CString& s) {m_sAuthToken = s; }
 	void SetName(const CString& s) { m_sName = s; }
 	void SetConnectionToken(const CString& s) { m_sConnectionToken = s; }
 	void SetConnectionName(const CString& s) { m_sConnectionName = s; }
@@ -231,7 +246,9 @@ public:
 	void AddClient(CClient* p) { m_spClients.insert(p); }
 	void SetHost(const CString& s) { m_sHost = s; }
 	void SetPort(unsigned short u) { m_uPort = u; }
+	void SetSsl(bool b = true) { m_bSsl = b; }
 	void SetNew(bool b = true) { m_bNew = b; }
+	void SetPersistent(bool b = true) { m_bPersistent = b; }
 
 	// Flags
 	void SetFlag(unsigned int u) { m_uFlags |= u; }
@@ -255,6 +272,7 @@ public:
 		m_sHiliteSound.clear();
 		m_sHost.clear();
 		m_uPort = 0;
+		m_bSsl = true;
 		m_uFlags = 0;
 		m_ssKeywords.clear();
 	}
@@ -263,7 +281,9 @@ private:
 	set<CClient*>  m_spClients;
 	CModule&       m_Parent;
 	bool           m_bNew;
+	bool           m_bPersistent;
 	CString        m_sToken;
+	CString        m_sAuthToken;
 	CString        m_sName;
 	CString        m_sConnectionToken;
 	CString        m_sConnectionName;
@@ -272,6 +292,7 @@ private:
 	SCString       m_ssKeywords;
 	CString        m_sHost;
 	unsigned short m_uPort;
+	bool           m_bSsl;
 	unsigned int   m_uFlags;
 };
 
@@ -357,6 +378,39 @@ public:
 				m_bAwayOnlyPush = sArg.ToBool();
 			} else if ( sArg.TrimPrefix("ignorenetworkservices") ) {
 				m_bIgnoreNetworkServices = sArg.ToBool();
+			} else if ( sArg.TrimPrefix("tcpdevice") ) {
+				sArg.Replace("\\", "-"); // workaround to keep with current option-parsing...
+				DEBUG("device rawdata:" + sArg);
+				VCString vsParts;
+				sArg.Split(":", vsParts);
+				if (vsParts.size() >= 4) {
+					CString sHost(vsParts[0]);
+					sHost.Replace(" ", "");
+					int nPort = vsParts[1].ToInt();
+					CString sPort(nPort);
+					bool bSsl(vsParts[2].Equals("ssl"));
+					CString sAuthToken(vsParts[3]);
+					CString sToken = "tcpdevice:" + sHost + ":" + sPort + ":" + sAuthToken;
+					if (vsParts.size() >= 5) {
+						sToken = vsParts[4];
+					}
+
+					CDevice* pDevice = FindDevice(sToken);
+					if ( !pDevice ) {
+						pDevice = new CDevice(sToken, *this);
+						m_mspDevices[pDevice->GetToken()] = pDevice;
+					}
+					pDevice->Reset();
+					pDevice->SetToken(sToken);
+					pDevice->SetAuthToken(sAuthToken);
+					pDevice->SetName((bSsl ? "ssl://" : "tcp://") +sHost + ":" + sPort);
+					pDevice->SetHost(sHost);
+					pDevice->SetPort(nPort);
+					pDevice->SetSsl(bSsl);
+					pDevice->SetPersistent(false);
+
+					DEBUG("Added TCP/IP device: " + pDevice->GetName());
+				}
 			}
 		}
 
