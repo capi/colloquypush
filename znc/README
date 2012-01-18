@@ -16,7 +16,7 @@ Thanks to prozac we have a working znc module that pushes priv messages and hili
 
 	-ignorenetworkservices 0|1 - when set to 1, znc won't push messages from network services
 
-	-tcpdevice hostname:port:(plain|ssl):auth-token[:device-token]
+	-tcpdevice hostname:port:(plain|ssl):auth-token[:device-token[:option1:[option2]...]]
 		additionally to any normally registered device.
 		Will add a statically configured device that will be pushed to
 		This is an advanced option and most likely never used by most
@@ -36,6 +36,12 @@ Thanks to prozac we have a working znc module that pushes priv messages and hili
 			this will also push to the localhost at port 12345, using SSL
 			encryption, skipping the auth-token but sending device
 			"af12345bcde123".
+		Options:
+		  - forcecontent:
+				overrides a skipmessagecontent setting (if it is set) and
+				includes the message body when pushing to this server
+				(useful if you trust the push-server e.g. because it is
+				under your control)
 
 * all the arguments above can be set from with-in your IRC client by messaging *colloquy now
   try /msg *colloquy help

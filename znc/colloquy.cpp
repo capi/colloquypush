@@ -23,6 +23,7 @@ public:
 				m_bNew = false;
 				m_bPersistent = true;
 				m_uFlags = 0;
+				m_bForceContent = false;
 	}
 
 	virtual ~CDevice() {}
@@ -234,6 +235,7 @@ public:
 	bool IsSsl() const { return m_bSsl; }
 	bool IsNew() const { return m_bNew; }
 	bool IsPersistent() const { return m_bPersistent; }
+	bool IsForceContent() const { return m_bForceContent; }
 
 	// Setters
 	void SetToken(const CString& s) { m_sToken = s; }
@@ -249,6 +251,7 @@ public:
 	void SetSsl(bool b = true) { m_bSsl = b; }
 	void SetNew(bool b = true) { m_bNew = b; }
 	void SetPersistent(bool b = true) { m_bPersistent = b; }
+	void SetForceContent(bool b) { m_bForceContent = b; }
 
 	// Flags
 	void SetFlag(unsigned int u) { m_uFlags |= u; }
@@ -293,6 +296,7 @@ private:
 	CString        m_sHost;
 	unsigned short m_uPort;
 	bool           m_bSsl;
+	bool           m_bForceContent;
 	unsigned int   m_uFlags;
 };
 
@@ -391,7 +395,7 @@ public:
 					bool bSsl(vsParts[2].Equals("ssl"));
 					CString sAuthToken(vsParts[3]);
 					CString sToken = "tcpdevice:" + sHost + ":" + sPort + ":" + sAuthToken;
-					if (vsParts.size() >= 5) {
+					if (vsParts.size() >= 5 && !vsParts[4].empty()) {
 						sToken = vsParts[4];
 					}
 
@@ -408,6 +412,13 @@ public:
 					pDevice->SetPort(nPort);
 					pDevice->SetSsl(bSsl);
 					pDevice->SetPersistent(false);
+
+					for (uint i = 5; i < vsParts.size(); i++) {
+						if (vsParts[i].Equals("forcecontent")) {
+							pDevice->SetForceContent(true);
+						}
+					}
+
 
 					DEBUG("Added TCP/IP device: " + pDevice->GetName());
 				}
@@ -855,7 +866,7 @@ public:
 				}
 
 				if (!bMatches) {
-					return false;
+					continue; // not return, as we'd skip other devices
 				} else if (m_bSkipMessageContent) {
 					sPushMessage = "Highlighted message";
 				}
@@ -864,7 +875,7 @@ public:
 			if (m_debug) {
 			PutModule("debug: idleTest Pass... "+CString(m_lastActivity) + " < " + CString(time(NULL)-m_idleAfterMinutes*60)+" | #" +sChannel + " "+sMessage);
 			}
-			if (!pDevice->Push(sNick, sPushMessage, sChannel, bHilite, iBadge)) {
+			if (!pDevice->Push(sNick, !pDevice->IsForceContent() ? sPushMessage : sMessage, sChannel, bHilite, iBadge)) {
 				bRet = false;
 			}
 		}
