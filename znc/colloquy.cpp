@@ -312,6 +312,7 @@ protected:
 	bool m_bSkipMessageContent;
 	bool m_bAwayOnlyPush;
 	bool m_bIgnoreNetworkServices;
+	set<CString> m_ignoredChannels;
 public:
 	MODCONSTRUCTOR(CColloquyMod) {
 		// init vars
@@ -382,6 +383,15 @@ public:
 				m_bAwayOnlyPush = sArg.ToBool();
 			} else if ( sArg.TrimPrefix("ignorenetworkservices") ) {
 				m_bIgnoreNetworkServices = sArg.ToBool();
+			} else if ( sArg.TrimPrefix("ignoredchannels") ) {
+				sArg.Trim();
+				VCString vsChannels;
+				sArg.Split(":", vsChannels);
+				m_ignoredChannels.clear();
+				for (uint i = 0; i < vsChannels.size(); i++) {
+				    m_ignoredChannels.insert(vsChannels[i]);
+				    DEBUG("Ignoring channel: " + vsChannels[i]);
+				}
 			} else if ( sArg.TrimPrefix("tcpdevice") ) {
 				sArg.Replace("\\", "-"); // workaround to keep with current option-parsing...
 				DEBUG("device rawdata:" + sArg);
@@ -774,6 +784,10 @@ public:
 	bool Push(const CString& sNick, const CString& sMessage, const CString& sChannel, bool bHilite, int iBadge) {
 		if (iBadge != 0 && !m_bAttachedPush && m_pUser->IsUserAttached()) {
 			return false;
+		}
+		if (iBadge != 0 && sChannel.size() > 0 && m_ignoredChannels.find(sChannel) != m_ignoredChannels.end()) {
+		    DEBUG("Ignoring message to channel: " + sChannel);
+		    return false;
 		}
 
 		if (iBadge != 0) {

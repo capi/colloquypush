@@ -16,6 +16,9 @@ Thanks to prozac we have a working znc module that pushes priv messages and hili
 
 	-ignorenetworkservices 0|1 - when set to 1, znc won't push messages from network services
 
+	-ignoredchannels #channel1[:#channel2:[...]]
+		ignore push messages from the given channels
+
 	-tcpdevice hostname:port:(plain|ssl):auth-token[:device-token[:option1:[option2]...]]
 		additionally to any normally registered device.
 		Will add a statically configured device that will be pushed to
