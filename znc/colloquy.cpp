@@ -807,7 +807,7 @@ public:
 		if (m_bSkipMessageContent && !sMessage.Equals("")) {
 			sPushMessage = "";
 			if (!bHilite) {
-			    sPushMessage = "Private messsage from " + sNick;
+			    sPushMessage = "Private message from " + sNick;
 			}
 		}
 
