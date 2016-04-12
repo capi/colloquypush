@@ -133,6 +133,12 @@ public:
 		DEBUG("----------------------------------------------------------------------------");
 
 		CSocket *pSock = new CSocket(&m_Parent);
+		if (!m_sSslFingerprint.empty()) {
+			DEBUG("Trusting SSL fingerprint: " << m_sSslFingerprint);
+			SCString trusted;
+			trusted.insert(m_sSslFingerprint.AsLower());
+			pSock->SetSSLTrustedPeerFingerprints(trusted);
+		}
 		pSock->Connect(m_sHost, m_uPort, m_bSsl);
 		pSock->Write(sPayload);
 		pSock->Close(Csock::CLT_AFTERWRITE);
@@ -241,6 +247,7 @@ public:
 	bool IsNew() const { return m_bNew; }
 	bool IsPersistent() const { return m_bPersistent; }
 	bool IsForceContent() const { return m_bForceContent; }
+	CString GetSslFingerPrint() const { return m_sSslFingerprint; }
 
 	// Setters
 	void SetToken(const CString& s) { m_sToken = s; }
@@ -257,6 +264,7 @@ public:
 	void SetNew(bool b = true) { m_bNew = b; }
 	void SetPersistent(bool b = true) { m_bPersistent = b; }
 	void SetForceContent(bool b) { m_bForceContent = b; }
+	void SetSslFingerprint(const CString& s) { m_sSslFingerprint = s; }
 
 	// Flags
 	void SetFlag(unsigned int u) { m_uFlags |= u; }
@@ -299,6 +307,7 @@ private:
 	CString        m_sHiliteSound;
 	SCString       m_ssKeywords;
 	CString        m_sHost;
+	CString        m_sSslFingerprint;
 	unsigned short m_uPort;
 	bool           m_bSsl;
 	bool           m_bForceContent;
@@ -431,6 +440,10 @@ public:
 					for (uint i = 5; i < vsParts.size(); i++) {
 						if (vsParts[i].Equals("forcecontent")) {
 							pDevice->SetForceContent(true);
+						} else if (vsParts[i].TrimPrefix("sslfingerprint=")) {
+							CString sFingerprint = vsParts[i];
+							sFingerprint.Replace("_", ":"); // workaround to keep with current option-parsing...
+							pDevice->SetSslFingerprint(sFingerprint);
 						}
 					}
 

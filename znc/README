@@ -45,6 +45,10 @@ Thanks to prozac we have a working znc module that pushes priv messages and hili
 				includes the message body when pushing to this server
 				(useful if you trust the push-server e.g. because it is
 				under your control)
+		  - sslfingerprint:
+				add a sha256 fingerprint to be accepted even if certificate
+				validation fails. Needs to be in the following format:
+				1c_e2_5b_65_d8_01_88_13...
 
 * all the arguments above can be set from with-in your IRC client by messaging *colloquy now
   try /msg *colloquy help
